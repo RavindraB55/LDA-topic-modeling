@@ -118,3 +118,30 @@ def gen_dict_and_corpus(input_df, data_column = "Text", sample_index = 1):
     print([[(id2word[id], freq) for id, freq in cp] for cp in corpus[0:2]])
 
     return id2word, corpus
+
+
+def format_topics_sentences(ldamodel, corpus, texts):
+    # Init output
+    sent_topics_df = pd.DataFrame(columns = ['Dominant_Topic', 'Perc_Contribution', 'Topic_Keywords'])
+
+    # Get main topic in each document
+    for i, row in enumerate(ldamodel[corpus]):
+        row = row[0]
+        row = sorted(row, key=lambda x: (x[1]), reverse=True)
+        # print(row)
+        # Get the Dominant topic, Perc Contribution and Keywords for each document
+        for j, (topic_num, prop_topic) in enumerate(row):
+            if j == 0:  # => dominant topic
+                wp = ldamodel.show_topic(topic_num)
+                topic_keywords = ", ".join([word for word, prop in wp])
+                # print(topic_keywords)
+                # print(pd.Series([int(topic_num), round(prop_topic,4), topic_keywords]))
+                details = [int(topic_num), round(prop_topic,4), topic_keywords]
+                sent_topics_df.loc[len(sent_topics_df)] = details
+            else:
+                break
+
+    # Add original text to the end of the output
+    contents = pd.Series(texts)
+    sent_topics_df = pd.concat([sent_topics_df, contents], axis=1)
+    return(sent_topics_df)
